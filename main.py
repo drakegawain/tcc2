@@ -12,7 +12,9 @@ def main():
     zeta = 0.026
     wn = math.sqrt(k/m)
 
-    real_part, wc = calc_cartesian(N, wn, zeta)
+    real_part, wc, wc_negative = calc_cartesian(N, wn, zeta)
+
+    print(wc_negative)
 
     plt.plot(wc, real_part)
     plt.ylabel("Real Part")
@@ -25,22 +27,15 @@ def main():
     h = H(wn, cwc, zeta)
     fi = phi(g,h)
     a_l = a_lim(kf, g)
-    T = T_vector(cwc, wn, zeta, 10)
+    T = T_vector(wc_negative, wn, zeta)
     V = velocity_vector(T)
-    print("wn: {}".format(wn))
-    print("phi: {}".format(fi))
-    print("alim: {}".format(a_l))
-    print("T: {}".format(T))
-    print("N: {}".format(V))
-    NV, alim = a_lim_vector(kf, wn, zeta, T)
 
-    print("NV: {}".format(NV))
-    print("alim: {}".format(alim))
+    NV, alim = a_lim_vector(kf, wn, zeta, T)
 
     plt.plot(NV, alim)
     plt.ylabel("A_lim[mm]")
     plt.xlabel("N[rev/min]")
-    plt.plot()
+    plt.show()
 
 
     return
@@ -79,12 +74,15 @@ def calc_cartesian(wc_range, wn, zeta):
 
     res = []
     wc_vector = []
+    wc_negative = []
 
     for wc in range(wc_range):
         res.append(G(wn, wc, zeta)) 
+        if G(wn, wc, zeta) < 0:
+            wc_negative.append(wc)
         wc_vector.append(wc)
         
-    return res, wc_vector
+    return res, wc_vector, wc_negative
 
 
 def phi(G, H):
@@ -108,18 +106,22 @@ def velocity_vector(T:list):
 
 
 
-def T_vector(wc, wn, zeta, n):
+def T_vector(wc, wn, zeta):
 
     pi = math.pi
-    g = G(wn, wc, zeta)
-    h = H(wn, wc, zeta)
-    
-    fi = phi(g, h)
+    n = 0
+
     response = []
 
-    for number in range(n):
-        transient = (2*number*pi)+(3*pi)+(2*fi)
-        transient = transient/wc
+    for number in range(len(wc)):
+
+        transient = 0
+        g = G(wn, wc[number], zeta)
+        h = H(wn, wc[number], zeta)
+    
+        fi = phi(g, h)
+        transient = (2*n*pi)+(3*pi)+(2*fi)
+        transient = transient/wc[number]
         response.append(transient)
 
     return response
