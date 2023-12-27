@@ -18,18 +18,38 @@ def main():
     plt.ylabel("Real Part")
     plt.show()
 
+    cwc = 650
 
     return
+
+def R(wn, wc, zeta):
+
+    delta_w = (wn*wn) - (wc*wc)
+    delta_w = delta_w*delta_w
+    zeta_part = (2*zeta*wn)
+    zeta_part = zeta_part*zeta_part*wc*wc
+    res = delta_w + zeta_part
+
+    return res
 
 
 def G(wn, wc, zeta):
 
 
     transient = (wn*wn) - (wc*wc)
-    res = transient / ((transient*transient) + ((2*zeta*wn)*(2*zeta*wn))*(wc*wc))
+    res = transient / R(wn, wc, zeta)
 
 
     return res
+
+
+def H(wn, wc, zeta):
+
+    transient = -2*zeta*wn*wc
+    res = transient / R(wn, wc, zeta)
+
+    return res
+
 
 
 def calc_cartesian(wc_range, wn, zeta):
@@ -44,18 +64,32 @@ def calc_cartesian(wc_range, wn, zeta):
     return res, wc_vector
 
 
+def phi(G, H):
 
-def velocity(T):
+    res = math.degrees(math.atan(H/G))
 
-    res = 60/T
+    return res
+
+
+def velocity_vector(T):
+
+    res = []
+    for t in range(T):
+
+        transient = 60/t
+        res.append(transient)
+
 
     return res
 
 
 
-def T_vector(wc, n, phi):
+def T_vector(wc, wn, zeta, n, phi):
 
     pi = math.pi
+    G = G(wn, wc, zeta)
+    H = H(wn, wc, zeta)
+    phi = phi(G, H)
     response = []
 
     for number in range(n):
