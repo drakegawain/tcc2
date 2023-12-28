@@ -3,155 +3,99 @@ import matplotlib.pyplot as plt
 
 def main():
 
-    N = 2000 
+    N = 1000
     damp = 2000
     k = 20000000
     m = 50
     kf = 2000000000
     fn = 119
     zeta = 0.026
-    wn = math.sqrt(k/m)
+    wn = 119*2*math.pi 
 
-    real_part, wc, wc_negative = calc_cartesian(N, wn, zeta)
+    G = []
 
-    print(wc_negative)
 
-    plt.plot(wc, real_part)
+    for i in range(N):
+        G.append(real_part(wn, i, zeta))
+    
+    wc = range(N)
+
+    plt.plot(wc, G)
     plt.ylabel("Real Part")
     plt.xlabel("frequency [Hz]")
     plt.show()
 
-    cwc = 650
-    
-    g = G(wn, cwc, zeta)
-    h = H(wn, cwc, zeta)
-    fi = phi(g,h)
-    a_l = a_lim(kf, g)
-    T = T_vector(wc_negative, wn, zeta)
-    V = velocity_vector(T)
+    i = 748 
+    a_vec = []
+    n_vec = []
 
-    NV, alim = a_lim_vector(kf, wn, zeta, T)
+    while i < N:
 
-    plt.plot(NV, alim)
-    plt.ylabel("A_lim[mm]")
-    plt.xlabel("N[rev/min]")
+        wc = i
+        h = imaginary_part(wn, wc, zeta)
+        g = real_part(wn, wc, zeta)
+        e = 2*phi(h,g) + 3*math.pi
+        a = alim(kf, g)
+        n = spindle_speed(15, e, i/(2*math.pi))
+        a_vec.append(a)
+        n_vec.append(n)
+
+        i = i + 1
+
+    plt.plot(n_vec, a_vec)
+    plt.xlabel("Spindle speed[rpm]")
+    plt.ylabel("Alim[mm]")
     plt.show()
 
 
     return
 
-def R(wn, wc, zeta):
 
-    delta_w = (wn*wn) - (wc*wc)
-    delta_w = delta_w*delta_w
-    zeta_part = (2*zeta*wn)
-    zeta_part = zeta_part*zeta_part*wc*wc
-    res = delta_w + zeta_part
+def spindle_speed(k, e, fc):
 
-    return res
+    T = ((2*k*math.pi) + e)/(2*math.pi*fc)
+    n = 60/T
+
+    return n
 
 
-def G(wn, wc, zeta):
+def real_part(wn, w, zeta):
 
+    up = (wn*wn) - (w*w)
+    down = math.pow((wn*wn)-(w*w), 2) + ((math.pow(2*zeta*wn, 2))*math.pow(w, 2))
 
-    transient = (wn*wn) - (wc*wc)
-    res = transient / R(wn, wc, zeta)
+    return up/down
 
+def imaginary_part(wn, w, zeta):
 
-    return res
+    up = -2*zeta*wn*w 
+    down = math.pow((wn*wn)-(w*w), 2) + ((math.pow(2*zeta*wn, 2))*math.pow(w, 2))
 
-
-def H(wn, wc, zeta):
-
-    transient = -2*zeta*wn*wc
-    res = transient / R(wn, wc, zeta)
-
-    return res
+    return up/down
 
 
 
-def calc_cartesian(wc_range, wn, zeta):
+def phi(h, g):
 
-    res = []
-    wc_vector = []
-    wc_negative = []
-
-    for wc in range(wc_range):
-        res.append(G(wn, wc, zeta)) 
-        if G(wn, wc, zeta) < 0:
-            wc_negative.append(wc)
-        wc_vector.append(wc)
-        
-    return res, wc_vector, wc_negative
+    if g > 0 and h < 0:
+        return -math.atan(h/g)
+    if g<0 and h < 0:
+        return -math.pi + math.atan(h/g)
+    if g < 0 and h > 0:
+        return -math.pi - math.atan(h/g)
+    if g > 0 and h < 0:
+        return -2*math.pi + math.atan(h/g)
 
 
-def phi(G, H):
-
-    res = math.atan(H/G)
-
-    return res
-
-
-def velocity_vector(T:list):
-
-    res = []
-    for t in range(len(T)):
-
-
-        transient = 60/T[t]
-        res.append(transient)
-
-
-    return res
+    return
 
 
 
-def T_vector(wc, wn, zeta):
-
-    pi = math.pi
-    n = 0
-
-    response = []
-
-    for number in range(len(wc)):
-
-        transient = 0
-        g = G(wn, wc[number], zeta)
-        h = H(wn, wc[number], zeta)
-    
-        fi = phi(g, h)
-        transient = (2*n*pi)+(3*pi)+(2*fi)
-        transient = transient/wc[number]
-        response.append(transient)
-
-    return response
 
 
-def a_lim(kf, g):
+def alim(kf, g):
 
-    transient = 2*kf*g
-
-    return -1/transient
-
-
-def a_lim_vector(kf, wn, zeta, T_vector_calc):
-
-    w = []
-    g_vec = []
-    a_lim_vec = []
-
-    for t in T_vector_calc:
-        w.append((1/t)*2*math.pi)
-
-    for n in range(len(w)):
-        g_vec.append(G(wn, w[n], zeta))
-
-    for g in g_vec:
-        a_lim_vec.append(a_lim(kf, g))
-
-    vel = velocity_vector(T_vector_calc)
-
-    return vel, a_lim_vec 
+    return -1/(2*kf*g)
 
 
 
