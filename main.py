@@ -10,7 +10,7 @@ def main():
     kf = 2000000000
     fn = 119
     zeta = 0.026
-    wn = 119*2*math.pi 
+    wn = fn*2*math.pi 
 
     G = []
 
@@ -25,7 +25,62 @@ def main():
     plt.xlabel("frequency [Hz]")
     plt.show()
 
-    i = 748 
+    i = int(wn)+1 
+    a_vec = []
+    n_vec = []
+
+
+    fig, ax = plt.subplots(figsize=(5, 2.7), layout='constrained')
+
+    ax = create_curves(kf, wn, i, zeta, i, N, 20, ax)
+    ax.grid(True)
+    ax.set_xlabel('Spindle speed[rev/min]')
+    ax.set_ylabel('Alim[mm]')
+    plt.show()
+
+    
+
+
+    return
+
+def calc_text_loc(n_vec):
+
+    return n_vec[0]+10
+
+
+
+def create_curves(kf, wn, wc, zeta, i, N, k, ax):
+
+    j = 1
+    buffer = 0
+
+    while j <= k:
+
+        print("k: {}".format(j))
+        lab = "k={}".format(j)
+        a_vec, n_vec = create_vecs(kf, wn, wc, zeta, i, N, j)
+        ax.plot(n_vec, a_vec, color="blue")
+        if j < k and buffer != 0:
+            if buffer[0] - n_vec[0] > 70:
+
+                ax.text(calc_text_loc(n_vec), .005, lab)
+
+        else:
+
+            ax.text(calc_text_loc(n_vec), .005, lab)
+
+        buffer = n_vec
+
+        j = j + 1
+
+    ax.axis([0, 1400, 0, 0.3])
+        
+    return ax
+
+
+
+def create_vecs(kf, wn, wc, zeta, i, N, k):
+
     a_vec = []
     n_vec = []
 
@@ -36,19 +91,16 @@ def main():
         g = real_part(wn, wc, zeta)
         e = 2*phi(h,g) + 3*math.pi
         a = alim(kf, g)
-        n = spindle_speed(15, e, i/(2*math.pi))
-        a_vec.append(a)
+        n = spindle_speed(k, e, i/(2*math.pi))
+        a_vec.append(a*1000)
         n_vec.append(n)
 
         i = i + 1
 
-    plt.plot(n_vec, a_vec)
-    plt.xlabel("Spindle speed[rpm]")
-    plt.ylabel("Alim[mm]")
-    plt.show()
+    return a_vec, n_vec
 
 
-    return
+
 
 
 def spindle_speed(k, e, fc):
