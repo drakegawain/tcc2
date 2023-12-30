@@ -63,11 +63,11 @@ def create_curves(kf, wn, wc, zeta, i, N, k, ax):
         if j < k and buffer != 0:
             if buffer[0] - n_vec[0] > 70:
 
-                ax.text(calc_text_loc(n_vec), .005, lab)
+                ax.text(calc_text_loc(n_vec), min(a_vec)-0.01, lab)
 
         else:
 
-            ax.text(calc_text_loc(n_vec), .005, lab)
+            ax.text(calc_text_loc(n_vec), min(a_vec)-0.01, lab)
 
         buffer = n_vec
 
